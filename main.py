@@ -2,6 +2,8 @@ import asyncio
 import os
 import random
 import sys
+import dotenv
+
 from datetime import datetime
 from pathlib import Path
 from time import time
@@ -13,6 +15,8 @@ from openai import AsyncOpenAI
 from tqdm import tqdm
 
 from build_prompt import build_skipcheck_prompt, build_trans_prompt
+
+dotenv.load_dotenv()
 
 async_client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
@@ -29,6 +33,9 @@ def _looks_like_html(s: str) -> bool:
 
 
 async def safe_chat(messages, model, max_attempts=6, base_sleep=1.0, timeout=60):
+    if "openrouter" in str(async_client.base_url):
+        model = "openai/" + model
+
     for attempt in range(1, max_attempts + 1):
         try:
             resp = await async_client.chat.completions.create(
@@ -314,7 +321,11 @@ async def process_excel(
 
 
 if __name__ == "__main__":
-    INPUT_PATH = "data/NAC_10_samples.xlsx"
-    OUTPUT_PATH = "data/results/NAC_10_samples_results.xlsx"
+    INPUT_PATH = "data/NAC_500_samples.xlsx"
+    OUTPUT_PATH = "data/results/NAC_500_samples_results.xlsx"
+    
+    print(
+        f"Computing with ASYNC_CONCURRENCY: {ASYNC_CONCURRENCY}",
+    )
     
     asyncio.run(process_excel(input_excel_path=INPUT_PATH, output_excel_path=OUTPUT_PATH))
